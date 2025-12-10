@@ -1,8 +1,6 @@
-import gleam/bool
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/option
 import gleam/result
 import gleam/string
 import utils
@@ -49,8 +47,6 @@ pub fn day9p1(path: String) -> Int {
             * { int.absolute_value(c2 - c1) + 1 }
           int.max(area, acc)
         }
-
-        _ -> panic as "Err in coord pair"
       }
     })
   io.println("Day 9 part 1 : " <> int.to_string(res))
