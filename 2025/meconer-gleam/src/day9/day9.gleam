@@ -2,6 +2,8 @@ import gleam/bool
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/option
+import gleam/result
 import gleam/string
 import utils
 
@@ -134,7 +136,6 @@ fn is_valid_rect(
   let bot_row = int.max(box.p1.row, box.p2.row)
   let left_col = int.min(box.p1.col, box.p2.col)
   let right_col = int.max(box.p1.col, box.p2.col)
-  echo [top_row, bot_row, left_col, right_col]
   let left_vertical = Line(Coord(left_col, top_row), Coord(left_col, bot_row))
   let right_vertical =
     Line(Coord(right_col, top_row), Coord(right_col, bot_row))
@@ -161,45 +162,7 @@ fn is_valid_rect(
         })
       {
         True -> False
-        False -> {
-          // Check if we have any vertical lines to the left of the leftmost col or to the right of the rightmost col. If not we are outside
-          let act_vert_lines =
-            list.filter(vert_lines, fn(vert_line) {
-              let top = int.min(vert_line.p1.row, vert_line.p2.row)
-              let bot = int.max(vert_line.p1.row, vert_line.p2.row)
-              { bot <= top_row || top >= bot_row } |> bool.negate
-            })
-            |> echo
-          let not_outside_vert =
-            list.any(act_vert_lines, fn(vert_line) {
-              vert_line.p1.col < left_col
-            })
-            && list.any(act_vert_lines, fn(vert_line) {
-              vert_line.p1.col > right_col
-            })
-
-          case not_outside_vert {
-            False -> False
-            True -> {
-              // The same horizontally
-              let act_hor_lines =
-                list.filter(hor_lines, fn(hor_line) {
-                  let left = int.min(hor_line.p1.col, hor_line.p2.col)
-                  let right = int.max(hor_line.p1.col, hor_line.p2.col)
-                  { right <= left_col || left >= right_col } |> bool.negate
-                })
-              let not_outside_hor =
-                list.any(act_hor_lines, fn(hor_line) {
-                  hor_line.p1.row > top_row
-                })
-                && list.any(act_hor_lines, fn(hor_line) {
-                  hor_line.p1.row < bot_row
-                })
-              echo not_outside_hor
-              not_outside_hor |> bool.negate
-            }
-          }
-        }
+        False -> True
       }
     }
   }
@@ -226,17 +189,20 @@ pub fn day9p2(path: String) -> Int {
     list.combination_pairs(points)
     |> list.map(fn(pair) { Rect(pair.0, pair.1) })
 
-  let try = is_valid_rect(Rect(Coord(7, 1), Coord(8, 5)), hor_lines, vert_lines)
-  echo try
-  // let valid_rects =
-  //   list.filter(corner_pairs, fn(corner_pair) {
-  //     let valid = is_valid_rect(corner_pair, hor_lines, vert_lines)
-  //   })
-  //   |> list.map(fn(box) { area_of_box(box) })
-  //   |> list.sort(int.compare)
-  //   |> echo
-
-  let res = 0
+  // let try = is_valid_rect(Rect(Coord(7, 1), Coord(8, 5)), hor_lines, vert_lines)
+  // echo try
+  let valid_rects =
+    list.filter(corner_pairs, fn(corner_pair) {
+      is_valid_rect(corner_pair, hor_lines, vert_lines)
+    })
+    |> list.map(fn(box) { area_of_box(box) })
+    |> list.sort(int.compare)
+    |> list.reverse
+  let res =
+    valid_rects
+    |> list.first
+    |> result.unwrap(0)
+  // Annoying. Works on real input but does not invalidate some rects on the test input
   io.println("Day 9 part 2 : " <> int.to_string(res))
   res
 }
