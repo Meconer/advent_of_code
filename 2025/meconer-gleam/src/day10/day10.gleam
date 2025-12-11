@@ -216,25 +216,25 @@ fn try_buttons_p2(
   rec_try_buttons_p2(queue, visited, target, buttons)
 }
 
-fn find_solution_p2(
-  target: dict.Dict(Int, a),
-  buttons: dict.Dict(Int, List(Int)),
-) {
-  // For each target part, see which buttons are releveant to reach the wanted counter
+// fn find_solution_p2(
+//   target: dict.Dict(Int, a),
+//   buttons: dict.Dict(Int, List(Int)),
+// ) {
+//   // For each target part, see which buttons are releveant to reach the wanted counter
 
-  dict.fold(target, [], fn(acc, key, target_count) {
-    let buttons_for_key =
-      dict.filter(buttons, fn(key, target_count) {
-        list.contains(counter_list, key)
-      })
-    case buttons_for_key {
-      [] -> acc
-      b_list -> [b_list, ..acc]
-    }
-  })
-  |> list.reverse
-  |> echo
-}
+//   dict.fold(target, [], fn(acc, key, target_count) {
+//     let buttons_for_key =
+//       dict.filter(buttons, fn(key, target_count) {
+//         list.contains(counter_list, key)
+//       })
+//     case buttons_for_key {
+//       [] -> acc
+//       b_list -> [b_list, ..acc]
+//     }
+//   })
+//   |> list.reverse
+//   |> echo
+// }
 
 pub fn day10p2(path: String) -> Int {
   let inp =
@@ -244,7 +244,7 @@ pub fn day10p2(path: String) -> Int {
   let assert Ok(f) = list.first(inp)
 
   let #(target, buttons) = f
-  let sol = find_solution_p2(target, buttons)
+  // let sol = find_solution_p2(target, buttons)
   // let results =
   //   list.map(inp, fn(part) {
   //     let #(target, buttons) = part
