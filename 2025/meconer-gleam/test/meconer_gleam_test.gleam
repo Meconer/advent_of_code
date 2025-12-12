@@ -129,17 +129,17 @@ pub fn main() -> Nil {
 //   let res = day9.day9p2("src/day9/sample.txt")
 //   assert res == 24
 // }
-import day10/day10
+// import day10/day10
 
-pub fn day10p1_test() {
-  let res = day10.day10p1("src/day10/sample.txt")
-  assert res == 7
-}
+// pub fn day10p1_test() {
+//   let res = day10.day10p1("src/day10/sample.txt")
+//   assert res == 7
+// }
 
-pub fn day10p2_test() {
-  let res = day10.day10p2("src/day10/sample.txt")
-  assert res == 33
-}
+// pub fn day10p2_test() {
+//   let res = day10.day10p2("src/day10/sample.txt")
+//   assert res == 33
+// }
 
 // import day11/day11
 
@@ -156,10 +156,10 @@ import day12/day12
 
 pub fn day12p1_test() {
   let res = day12.day12p1("src/day12/sample.txt")
-  assert res == 7
+  assert res == 0
 }
 
 pub fn day12p2_test() {
   let res = day12.day12p2("src/day12/sample.txt")
-  assert res == 33
+  assert res == 0
 }
