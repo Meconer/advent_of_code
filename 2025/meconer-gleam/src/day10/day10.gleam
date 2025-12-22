@@ -48,7 +48,7 @@ fn parse_p1(input) {
   })
 }
 
-type Machine {
+pub type Machine {
   Machine(joltages: dict.Dict(Int, Int), buttons: dict.Dict(Int, List(Int)))
 }
 
@@ -123,9 +123,7 @@ fn try_buttons_p1(wanted: Int, buttons: List(Int)) -> State {
   let initial_state = State([], 0)
   let visited = set.new() |> set.insert(0)
   let queue = [initial_state]
-  let final_state =
-    rec_try_buttons(queue, visited, wanted, buttons)
-    |> echo
+  let final_state = rec_try_buttons(queue, visited, wanted, buttons)
   case final_state {
     Ok(state) -> state
     Error(s) -> panic as s
@@ -168,8 +166,8 @@ pub fn day10p1(path: String) -> Int {
   res
 }
 
-fn solve_mach(machine: Machine) {
-  let button_combos = rec_find_solution(machine)
+pub fn solve_mach(machine: Machine) {
+  rec_find_solution(machine)
 }
 
 fn find_btn_combos(machine: Machine) -> List(List(Int)) {
@@ -191,7 +189,10 @@ fn find_btn_combos(machine: Machine) -> List(List(Int)) {
 
 fn rec_find_solution(machine: Machine) {
   case is_all_zeros(machine) {
-    True -> 0
+    True -> {
+      0
+    }
+
     False -> {
       case has_negatives(machine) {
         True ->
@@ -204,32 +205,51 @@ fn rec_find_solution(machine: Machine) {
           let combos = find_btn_combos(machine)
           let joltage_deltas_and_counts =
             find_joltage_deltas_and_counts(combos, machine, odds)
-          let machines_with_odds_removed =
-            list.map(joltage_deltas_and_counts, fn(delta_and_count) {
-              let #(delta, count) = delta_and_count
-              let new_jolts =
-                dict.fold(delta, machine.joltages, fn(acc, key, dval) {
-                  dict.upsert(acc, key, fn(opt_val) {
-                    case opt_val {
-                      option.Some(v) -> v - dval
-                      option.None -> panic as "Err in dict.fold"
-                    }
-                  })
+          case joltage_deltas_and_counts {
+            [] -> 999_999_999
+            _ -> {
+              let machines_with_deltas_removed =
+                list.map(joltage_deltas_and_counts, fn(delta_and_count) {
+                  let #(delta, count) = delta_and_count
+                  let new_jolts =
+                    dict.fold(delta, machine.joltages, fn(acc, key, dval) {
+                      dict.upsert(acc, key, fn(opt_val) {
+                        case opt_val {
+                          option.Some(v) -> v - dval
+                          option.None -> panic as "Err in dict.fold"
+                        }
+                      })
+                    })
+
+                  #(Machine(new_jolts, machine.buttons), count)
+                })
+                |> list.filter(fn(el) {
+                  let #(mach, _count) = el
+                  !has_negatives(mach)
                 })
 
-              #(Machine(new_jolts, machine.buttons), count)
-              |> echo
-            })
+              let halved_machines =
+                list.map(machines_with_deltas_removed, fn(machine_and_count) {
+                  let #(machine, count) = machine_and_count
+                  let half_mach = calc_half_joltages(machine)
+                  let inner_count = 2 * rec_find_solution(half_mach)
 
-          let halved_machines =
-            list.map(machines_with_odds_removed, fn(machine_and_count) {
-              let #(machine, count) = machine_and_count
-              let half_mach =
-                calc_half_joltages(machine)
-                |> echo
-              #(half_mach, count)
-            })
-          0
+                  #(half_mach, count + inner_count)
+                })
+                |> list.reduce(fn(acc, hm) {
+                  let #(_mach, count) = hm
+                  let #(_acc_mach, best_count) = acc
+                  case count < best_count {
+                    True -> {
+                      hm
+                    }
+                    False -> acc
+                  }
+                })
+                |> result.unwrap(#(machine, -1))
+              halved_machines.1
+            }
+          }
         }
       }
     }
@@ -237,7 +257,7 @@ fn rec_find_solution(machine: Machine) {
 }
 
 fn calc_half_joltages(machine: Machine) {
-  let new_jolts = dict.map_values(machine.joltages, fn(key, val) { val / 2 })
+  let new_jolts = dict.map_values(machine.joltages, fn(_key, val) { val / 2 })
   Machine(new_jolts, machine.buttons)
 }
 
@@ -286,7 +306,6 @@ fn find_joltage_deltas_and_counts(
       }
     })
   })
-  |> echo
 }
 
 pub fn day10p2(path: String) -> Int {
@@ -294,18 +313,16 @@ pub fn day10p2(path: String) -> Int {
     get_input(path)
     |> parse_p2
 
-  let assert Ok(f) =
-    inp
-    |> list.first
+  // let assert Ok(f) =
+  //   inp
+  //   |> list.drop(1)
+  //   |> list.first
 
-  solve_mach(f)
-
-  let res = 0
-
-  // let res =
-  //   list.map(inp, fn(mach) { solve_p2(mach) })
-  //   |> echo
-  //   |> int.sum
+  // solve_mach(f) |> echo
+  let res =
+    list.map(inp, fn(mach) { solve_mach(mach) |> echo })
+    |> echo
+    |> int.sum
   io.println("Day 10 part 2 : " <> int.to_string(res))
   res
 }

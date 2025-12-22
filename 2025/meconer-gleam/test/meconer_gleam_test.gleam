@@ -1,6 +1,7 @@
 // import day1/day1
 // import day2/day2
 // import day3/day3
+import gleam/dict
 import gleeunit
 
 pub fn main() -> Nil {
@@ -144,6 +145,16 @@ import day10/day10
 pub fn day10p2_test() {
   let res = day10.day10p2("src/day10/sample.txt")
   assert res == 33
+}
+
+pub fn day10spec_test() {
+  let mach =
+    day10.Machine(
+      dict.from_list([#(0, 2), #(1, 2), #(2, 2)]),
+      dict.from_list([#(0, [0, 1]), #(1, [0, 2]), #(2, [1, 2])]),
+    )
+  let res = day10.solve_mach(mach)
+  assert res == 3
 }
 // pub fn day10p2_lil_test() {
 //   let res = day10.day10p2_lil("src/day10/sample.txt")
