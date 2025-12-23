@@ -1,7 +1,6 @@
 // import day1/day1
 // import day2/day2
 // import day3/day3
-import gleam/dict
 import gleeunit
 
 pub fn main() -> Nil {
@@ -144,7 +143,7 @@ import day10/day10
 
 pub fn day10p2_test() {
   let res = day10.day10p2("src/day10/sample.txt")
-  assert res == 33
+  assert res == 300
 }
 // pub fn day10spec_test() {
 //   let mach =

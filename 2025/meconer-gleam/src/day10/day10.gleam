@@ -5,9 +5,7 @@ import gleam/list
 import gleam/option
 import gleam/result
 import gleam/set
-
 import gleam/string
-
 import utils
 
 fn get_input(path: String) {
@@ -118,7 +116,6 @@ fn rec_try_buttons(
   }
 }
 
-// This worked for part 1
 fn try_buttons_p1(wanted: Int, buttons: List(Int)) -> State {
   let initial_state = State([], 0)
   let visited = set.new() |> set.insert(0)
@@ -315,15 +312,8 @@ pub fn day10p2(path: String) -> Int {
     get_input(path)
     |> parse_p2
 
-  // let assert Ok(f) =
-  //   inp
-  //   |> list.drop(1)
-  //   |> list.first
-
-  // solve_mach(f) |> echo
   let res =
-    list.map(inp, fn(mach) { solve_mach(mach) |> echo })
-    |> echo
+    list.map(inp, fn(mach) { solve_mach(mach) })
     |> int.sum
   io.println("Day 10 part 2 : " <> int.to_string(res))
   res
