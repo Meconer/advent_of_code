@@ -164,7 +164,7 @@ pub fn day10p1(path: String) -> Int {
 }
 
 pub fn solve_mach(machine: Machine) {
-  rec_find_solution(machine)
+  rec_find_solution(machine, dict.new())
 }
 
 fn find_btn_combos(machine: Machine) -> List(List(Int)) {
@@ -184,75 +184,94 @@ fn find_btn_combos(machine: Machine) -> List(List(Int)) {
   combos
 }
 
-fn rec_find_solution(machine: Machine) {
-  case is_all_zeros(machine) {
-    True -> {
-      0
-    }
-
-    False -> {
-      case has_negatives(machine) {
-        True ->
-          // This was no solution. Return a big number
-          999_999_999
-        False -> {
+fn rec_find_solution(
+  machine: Machine,
+  memo: dict.Dict(Machine, Int),
+) -> #(Int, dict.Dict(Machine, Int)) {
+  case dict.get(memo, machine) {
+    Ok(val) -> #(val, memo)
+    Error(_) -> {
+      let #(res_val, updated_memo) = case
+        is_all_zeros(machine),
+        has_negatives(machine)
+      {
+        True, _ -> #(0, memo)
+        _, True -> #(999_999, memo)
+        False, False -> {
           // Make a list of 1:s for each odd joltage or
           // 0 for each even joltage level
           let odds = find_odd_joltages(machine)
           let combos = find_btn_combos(machine)
-          let joltage_deltas_and_counts =
-            find_joltage_deltas_and_counts(combos, machine, odds)
-          case joltage_deltas_and_counts {
-            [] -> 999_999_999
-            _ -> {
-              let machines_with_deltas_removed =
-                list.map(joltage_deltas_and_counts, fn(delta_and_count) {
-                  let #(delta, count, _combo) = delta_and_count
-                  let new_jolts =
-                    dict.fold(delta, machine.joltages, fn(acc, key, dval) {
-                      dict.upsert(acc, key, fn(opt_val) {
-                        case opt_val {
-                          option.Some(v) -> v - dval
-                          option.None -> panic as "Err in dict.fold"
+
+          case find_joltage_deltas_and_counts(combos, machine, odds) {
+            [] -> #(999_999, memo)
+            deltas -> {
+              list.fold(deltas, #([], memo), fn(acc, delta_item) {
+                let #(processed, curr_memo) = acc
+
+                let #(delta, count, _combo) = delta_item
+
+                let new_jolts = subtract_deltas(machine.joltages, delta)
+                let next_machine = Machine(new_jolts, machine.buttons)
+                case has_negatives(next_machine) {
+                  True -> acc
+                  False -> {
+                    let half_machine = calc_half_joltages(next_machine)
+                    let #(inner, next_memo) =
+                      rec_find_solution(half_machine, curr_memo)
+                    let total_count =
+                      count
+                      + {
+                        case inner {
+                          icnt if icnt >= 0 -> icnt * 2
+                          _ -> 999_999_999
                         }
-                      })
-                    })
-
-                  #(Machine(new_jolts, machine.buttons), count)
-                })
-                |> list.filter(fn(el) {
-                  let #(mach, _count) = el
-                  !has_negatives(mach)
-                })
-
-              let halved_machines =
-                list.map(machines_with_deltas_removed, fn(machine_and_count) {
-                  let #(machine, count) = machine_and_count
-                  let half_mach = calc_half_joltages(machine)
-                  let inner_count = case rec_find_solution(half_mach) {
-                    ic if ic >= 0 -> 2 * ic
-                    _ -> 999_999
+                      }
+                    #([#(half_machine, total_count), ..processed], next_memo)
                   }
-                  #(half_mach, count + inner_count)
-                })
-                |> list.reduce(fn(acc, hm) {
-                  let #(_mach, count) = hm
-                  let #(_acc_mach, best_count) = acc
-                  case count < best_count {
-                    True -> {
-                      hm
-                    }
-                    False -> acc
-                  }
-                })
-                |> result.unwrap(#(machine, -1))
-              halved_machines.1
+                }
+              })
+              |> find_best_count(machine)
             }
           }
         }
       }
+      #(res_val, dict.insert(updated_memo, machine, res_val))
     }
   }
+}
+
+// Helper to keep the main function clean
+fn find_best_count(
+  result_pair: #(List(#(Machine, Int)), dict.Dict(Machine, Int)),
+  original: Machine,
+) {
+  let #(results, memo) = result_pair
+  let best =
+    list.fold(results, #(original, 999_999_999), fn(best, current) {
+      case current.1 < best.1 {
+        True -> current
+        False -> best
+      }
+    })
+  #(best.1, memo)
+}
+
+/// Takes the current joltages and a dictionary of deltas,
+/// returning a new dictionary with the deltas subtracted.
+fn subtract_deltas(
+  joltages: dict.Dict(Int, Int),
+  delta: dict.Dict(Int, Int),
+) -> dict.Dict(Int, Int) {
+  dict.fold(over: delta, from: joltages, with: fn(acc, key, dval) {
+    case dict.get(acc, key) {
+      // If the key exists, subtract and update the accumulator
+      Ok(current_val) -> dict.insert(acc, key, current_val - dval)
+
+      // If the key doesn't exist, return the accumulator unchanged
+      Error(_) -> acc
+    }
+  })
 }
 
 fn calc_half_joltages(machine: Machine) {
@@ -313,7 +332,7 @@ pub fn day10p2(path: String) -> Int {
     |> parse_p2
 
   let res =
-    list.map(inp, fn(mach) { solve_mach(mach) })
+    list.map(inp, fn(mach) { solve_mach(mach).0 })
     |> int.sum
   io.println("Day 10 part 2 : " <> int.to_string(res))
   res
