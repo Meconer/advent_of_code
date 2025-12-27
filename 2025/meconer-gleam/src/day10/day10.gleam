@@ -163,14 +163,12 @@ pub fn day10p1(path: String) -> Int {
   res
 }
 
-pub fn solve_mach(machine: Machine) {
-  rec_find_solution(machine, dict.new())
+pub fn solve_mach(machine: Machine, button_combos: List(List(Int))) {
+  rec_find_solution(machine, dict.new(), button_combos)
 }
 
-fn find_btn_combos(machine: Machine) -> List(List(Int)) {
-  let button_count = dict.size(machine.buttons)
+fn find_btn_combos(button_count: Int) -> List(List(Int)) {
   // No of combos is 2^button count
-
   let combo_count = int.bitwise_shift_left(1, button_count)
   // Generate all combinations of button presses 0 or 1 time
   let combos =
@@ -186,28 +184,26 @@ fn find_btn_combos(machine: Machine) -> List(List(Int)) {
 
 fn rec_find_solution(
   machine: Machine,
-  memo: dict.Dict(Machine, Int),
-) -> #(Int, dict.Dict(Machine, Int)) {
-  case dict.get(memo, machine) {
+  memo: dict.Dict(List(Int), Int),
+  button_combos: List(List(Int)),
+  // Precalculated button combos
+) -> #(Int, dict.Dict(List(Int), Int)) {
+  let key = jolt_dict_to_key(machine.joltages)
+  case dict.get(memo, key) {
     Ok(val) -> #(val, memo)
     Error(_) -> {
-      let #(res_val, updated_memo) = case
-        is_all_zeros(machine),
-        has_negatives(machine)
-      {
-        True, _ -> #(0, memo)
-        _, True -> #(999_999, memo)
-        False, False -> {
+      let #(res_val, updated_memo) = case is_all_zeros(machine) {
+        True -> #(0, memo)
+        False -> {
           // Make a list of 1:s for each odd joltage or
           // 0 for each even joltage level
           let odds = find_odd_joltages(machine)
-          let combos = find_btn_combos(machine)
 
-          case find_joltage_deltas_and_counts(combos, machine, odds) {
+          case find_joltage_deltas_and_counts(button_combos, machine, odds) {
             [] -> #(999_999, memo)
             deltas -> {
-              list.fold(deltas, #([], memo), fn(acc, delta_item) {
-                let #(processed, curr_memo) = acc
+              list.fold(deltas, #(999_999, memo), fn(acc, delta_item) {
+                let #(current_best_count, curr_memo) = acc
 
                 let #(delta, count, _combo) = delta_item
 
@@ -218,43 +214,35 @@ fn rec_find_solution(
                   False -> {
                     let half_machine = calc_half_joltages(next_machine)
                     let #(inner, next_memo) =
-                      rec_find_solution(half_machine, curr_memo)
+                      rec_find_solution(half_machine, curr_memo, button_combos)
                     let total_count =
                       count
                       + {
                         case inner {
                           icnt if icnt >= 0 -> icnt * 2
-                          _ -> 999_999_999
+                          _ -> 999_999
                         }
                       }
-                    #([#(half_machine, total_count), ..processed], next_memo)
+                    let new_best = int.min(current_best_count, total_count)
+                    #(new_best, next_memo)
                   }
                 }
               })
-              |> find_best_count(machine)
             }
           }
         }
       }
-      #(res_val, dict.insert(updated_memo, machine, res_val))
+      #(
+        res_val,
+        dict.insert(updated_memo, jolt_dict_to_key(machine.joltages), res_val),
+      )
     }
   }
 }
 
-// Helper to keep the main function clean
-fn find_best_count(
-  result_pair: #(List(#(Machine, Int)), dict.Dict(Machine, Int)),
-  original: Machine,
-) {
-  let #(results, memo) = result_pair
-  let best =
-    list.fold(results, #(original, 999_999_999), fn(best, current) {
-      case current.1 < best.1 {
-        True -> current
-        False -> best
-      }
-    })
-  #(best.1, memo)
+fn jolt_dict_to_key(dict: dict.Dict(Int, Int)) -> List(Int) {
+  dict.to_list(dict)
+  |> list.map(fn(el) { el.1 })
 }
 
 /// Takes the current joltages and a dictionary of deltas,
@@ -331,9 +319,36 @@ pub fn day10p2(path: String) -> Int {
     get_input(path)
     |> parse_p2
 
+  // Get the max and min button count
+  let sizes =
+    inp
+    |> list.fold(from: #(0, 100), with: fn(acc, machine) {
+      let #(max_size, min_size) = acc
+      let size = dict.size(machine.buttons)
+      #(int.max(max_size, size), int.min(min_size, size))
+    })
+
+  let pre_calculated_button_combos = calculate_button_combos(sizes)
+
   let res =
-    list.map(inp, fn(mach) { solve_mach(mach).0 })
+    list.map(inp, fn(mach) {
+      let button_combos =
+        dict.get(pre_calculated_button_combos, dict.size(mach.buttons))
+        |> result.unwrap([])
+      solve_mach(mach, button_combos).0
+    })
     |> int.sum
   io.println("Day 10 part 2 : " <> int.to_string(res))
   res
+}
+
+fn calculate_button_combos(
+  sizes: #(Int, Int),
+) -> dict.Dict(Int, List(List(Int))) {
+  let #(min_size, max_size) = sizes
+  list.range(min_size, max_size)
+  |> list.map(fn(button_count) {
+    #(button_count, find_btn_combos(button_count))
+  })
+  |> dict.from_list
 }
