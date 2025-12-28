@@ -283,8 +283,8 @@ fn find_joltage_deltas_and_counts(
   list.map(combos, fn(combo) {
     let deltas =
       list.index_fold(combo, dict.new(), fn(acc, el, idx) {
-        case el == 1 {
-          True -> {
+        case el {
+          1 -> {
             // Press the button with number idx
             let buttons_to_press =
               dict.get(machine.buttons, idx) |> result.unwrap([])
@@ -297,7 +297,7 @@ fn find_joltage_deltas_and_counts(
               })
             })
           }
-          False -> acc
+          _ -> acc
         }
       })
     let btn_press_cnt = int.sum(combo)
@@ -335,11 +335,30 @@ pub fn day10p2(path: String) -> Int {
       let button_combos =
         dict.get(pre_calculated_button_combos, dict.size(mach.buttons))
         |> result.unwrap([])
+        |> echo
+      let button_deltas = precalc_button_deltas(button_combos, mach)
       solve_mach(mach, button_combos).0
     })
     |> int.sum
   io.println("Day 10 part 2 : " <> int.to_string(res))
   res
+}
+
+fn precalc_button_deltas(button_combos: List(List(Int)), machine: Machine) {
+  button_combos
+  |> list.map(fn(btn_combo) {
+    list.index_fold(btn_combo, [], fn(acc, bit, idx) {
+      case bit {
+        1 -> {
+          let pressed_buttons =
+            dict.get(machine.buttons, idx) |> result.unwrap([])
+        }
+        _ -> {
+          todo
+        }
+      }
+    })
+  })
 }
 
 fn calculate_button_combos(
