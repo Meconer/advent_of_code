@@ -1,6 +1,8 @@
 // import day1/day1
 // import day2/day2
 // import day3/day3
+import gleam/dict
+import gleam/result
 import gleeunit
 
 pub fn main() -> Nil {
@@ -145,15 +147,23 @@ pub fn day10p2_test() {
   let res = day10.day10p2("src/day10/sample.txt")
   assert res == 300
 }
-// pub fn day10spec_test() {
-//   let mach =
-//     day10.Machine(
-//       dict.from_list([#(0, 2), #(1, 2), #(2, 2)]),
-//       dict.from_list([#(0, [0, 1]), #(1, [0, 2]), #(2, [1, 2])]),
-//     )
-//   let res = day10.solve_mach(mach)
-//   assert res == 3
-// }
+
+pub fn day10_b_combo_test() {
+  let mach =
+    day10.Machine(
+      dict.from_list([#(0, 2), #(1, 2), #(2, 2)]),
+      dict.from_list([#(0, [0, 1]), #(1, [0, 2]), #(2, [1, 2])]),
+    )
+  let res =
+    day10.calculate_button_combos(#(3, 3))
+    |> echo
+  let comb =
+    dict.get(res, 2)
+    |> result.unwrap([])
+    |> echo
+  let res = day10.precalc_button_deltas(comb, mach)
+  assert res == []
+}
 // pub fn day10p2_lil_test() {
 //   let res = day10.day10p2_lil("src/day10/sample.txt")
 //   assert res == 33

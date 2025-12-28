@@ -335,7 +335,6 @@ pub fn day10p2(path: String) -> Int {
       let button_combos =
         dict.get(pre_calculated_button_combos, dict.size(mach.buttons))
         |> result.unwrap([])
-        |> echo
       let button_deltas = precalc_button_deltas(button_combos, mach)
       solve_mach(mach, button_combos).0
     })
@@ -344,24 +343,33 @@ pub fn day10p2(path: String) -> Int {
   res
 }
 
-fn precalc_button_deltas(button_combos: List(List(Int)), machine: Machine) {
+pub fn precalc_button_deltas(button_combos: List(List(Int)), machine: Machine) {
   button_combos
   |> list.map(fn(btn_combo) {
-    list.index_fold(btn_combo, [], fn(acc, bit, idx) {
+    list.index_fold(btn_combo, dict.new(), fn(acc, bit, idx) {
       case bit {
         1 -> {
           let pressed_buttons =
             dict.get(machine.buttons, idx) |> result.unwrap([])
+          pressed_buttons
+          |> list.fold(acc, fn(iacc, btn) {
+            dict.upsert(iacc, btn, fn(opt_val) {
+              case opt_val {
+                option.Some(x) -> x + 1
+                option.None -> 1
+              }
+            })
+          })
         }
         _ -> {
-          []
+          acc
         }
       }
     })
   })
 }
 
-fn calculate_button_combos(
+pub fn calculate_button_combos(
   sizes: #(Int, Int),
 ) -> dict.Dict(Int, List(List(Int))) {
   let #(min_size, max_size) = sizes
