@@ -167,7 +167,7 @@ pub fn solve_mach(machine: Machine, button_combos: List(List(Int))) {
   rec_find_solution(machine, dict.new(), button_combos)
 }
 
-fn find_btn_combos(button_count: Int) -> List(List(Int)) {
+pub fn find_btn_combos(button_count: Int) -> List(List(Int)) {
   // No of combos is 2^button count
   let combo_count = int.bitwise_shift_left(1, button_count)
   // Generate all combinations of button presses 0 or 1 time

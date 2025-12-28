@@ -152,13 +152,11 @@ pub fn day10_b_combo_test() {
   let mach =
     day10.Machine(
       dict.from_list([#(0, 2), #(1, 2), #(2, 2)]),
-      dict.from_list([#(0, [0, 1]), #(1, [0, 2]), #(2, [1, 2])]),
+      dict.from_list([#(0, [0, 1]), #(1, [0, 2]), #(2, [0, 2])]),
     )
-  let res =
-    day10.calculate_button_combos(#(3, 3))
-    |> echo
+  let res = day10.calculate_button_combos(#(3, 3))
   let comb =
-    dict.get(res, 2)
+    dict.get(res, dict.size(mach.buttons))
     |> result.unwrap([])
     |> echo
   let res = day10.precalc_button_deltas(comb, mach)
