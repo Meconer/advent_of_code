@@ -354,7 +354,7 @@ fn precalc_button_deltas(button_combos: List(List(Int)), machine: Machine) {
             dict.get(machine.buttons, idx) |> result.unwrap([])
         }
         _ -> {
-          todo
+          []
         }
       }
     })
